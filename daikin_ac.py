@@ -85,7 +85,7 @@ def ler_config_arquivo() -> dict[str, Any]:
     """Lê config.json sem aplicar variáveis de ambiente."""
     if CONFIG_PATH.exists():
         try:
-            dados = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+            dados = json.loads(CONFIG_PATH.read_text(encoding="utf-8-sig"))  # aceita BOM
             return dados if isinstance(dados, dict) else {}
         except (OSError, json.JSONDecodeError):
             return {}
@@ -363,15 +363,71 @@ class DaikinAC:
 # Descoberta na rede (opcional, requer `zeroconf`)
 # --------------------------------------------------------------------------
 def descobrir(segundos: float = 4.0) -> list[tuple[str, str]]:
+    """Acha o ar na rede: primeiro por mDNS; se nada aparecer, varre a rede local
+    procurando quem responde na porta 15914 (funciona mesmo com mDNS bloqueado)."""
+    achados: list[tuple[str, str]] = []
     try:
-        import socket
-        import time
+        achados = _descobrir_mdns(segundos)
+    except Exception:  # noqa: BLE001 - sem zeroconf ou mDNS bloqueado: segue para a varredura
+        achados = []
+    if achados:
+        return achados
+    return [(f"porta 15914 aberta (rede {rede}.x)", ip) for ip, rede in varrer_rede()]
 
-        from zeroconf import ServiceBrowser, Zeroconf
-    except ImportError as exc:
-        raise DaikinError(
-            "Para descobrir automaticamente instale: python -m pip install zeroconf"
-        ) from exc
+
+def _redes_locais() -> list[str]:
+    """Prefixos /24 das redes do PC (ex.: '192.168.15'), sem loopback."""
+    import socket
+
+    ips: set[str] = set()
+    try:  # IP da placa usada para sair para a internet (não envia nada)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            ips.add(s.getsockname()[0])
+    except OSError:
+        pass
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ips.add(info[4][0])
+    except OSError:
+        pass
+    redes = []
+    for ip in ips:
+        partes = ip.split(".")
+        privado = (partes[0] == "10" or (partes[0] == "192" and partes[1] == "168")
+                   or (partes[0] == "172" and 16 <= int(partes[1]) <= 31))
+        if len(partes) == 4 and privado:
+            rede = ".".join(partes[:3])
+            if rede not in redes:
+                redes.append(rede)
+    return redes
+
+
+def varrer_rede(porta: int = 15914, tempo: float = 0.5) -> list[tuple[str, str]]:
+    """Testa os 254 endereços de cada rede local na porta do ar. Devolve [(ip, rede)]."""
+    import socket
+    from concurrent.futures import ThreadPoolExecutor
+
+    def testar(ip: str) -> bool:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(tempo)
+            return s.connect_ex((ip, porta)) == 0
+
+    resultado: list[tuple[str, str]] = []
+    for rede in _redes_locais():
+        candidatos = [f"{rede}.{i}" for i in range(1, 255)]
+        with ThreadPoolExecutor(max_workers=64) as pool:
+            for ip, aberto in zip(candidatos, pool.map(testar, candidatos)):
+                if aberto:
+                    resultado.append((ip, rede))
+    return resultado
+
+
+def _descobrir_mdns(segundos: float) -> list[tuple[str, str]]:
+    import socket
+    import time
+
+    from zeroconf import ServiceBrowser, Zeroconf
 
     encontrados: dict[str, str] = {}
 
@@ -471,7 +527,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "descobrir":
             achados = descobrir()
             if not achados:
-                print("Nenhum aparelho encontrado (tente informar o IP pelo roteador).")
+                print("Nenhum aparelho encontrado. Confira se o PC está no mesmo Wi-Fi do ar "
+                      "(ou informe o IP visto no roteador).")
             for nome, ip in achados:
                 print(f"{ip}\t{nome}")
             return 0

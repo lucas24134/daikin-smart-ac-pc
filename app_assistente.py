@@ -86,7 +86,7 @@ def rodar(*args: str, timeout: int = 600) -> tuple[int, str]:
 
 def ler_config() -> dict:
     try:
-        dados = json.loads(CONFIG.read_text(encoding="utf-8"))
+        dados = json.loads(CONFIG.read_text(encoding="utf-8-sig"))  # aceita BOM (Bloco de Notas)
         return dados if isinstance(dados, dict) else {}
     except (OSError, ValueError):
         return {}

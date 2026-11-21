@@ -10,6 +10,22 @@ sem passar pela nuvem: ícone ao lado do relógio, painel animado, menu rápido 
 > ⚠️ Projeto **não oficial**, feito por usuários. Não tem ligação com a Daikin.
 > Use por sua conta e risco.
 
+## ⚡ Instalação em 1 minuto
+
+1. **Baixe** o [`DaikinSmartAC.exe`](https://github.com/lucas24134/daikin-smart-ac-pc/releases/latest/download/DaikinSmartAC.exe)
+   (não precisa instalar Python nem nada).
+2. **Abra** o arquivo. Se o Windows mostrar "O Windows protegeu o computador",
+   clique em **Mais informações → Executar assim mesmo** (o app não é assinado digitalmente).
+3. No assistente que abrir:
+   1. **Criar atalho** na Área de Trabalho;
+   2. **Buscar IP** — acha o ar sozinho na rede (mesmo se o roteador bloquear a descoberta,
+      ele procura o aparelho na porta 15914);
+   3. **Device Key** — no app do celular: *Menu → Integrações → Home Assistant →
+      escolha o ar → Enviar*. Cole a chave e clique em **Testar e salvar**.
+4. Pronto: o ícone do ar aparece ao lado do relógio. Clique nele para abrir o painel.
+
+> O PC precisa estar no **mesmo Wi-Fi** do ar-condicionado.
+
 ## Funções
 
 - **Ícone na bandeja** (ao lado do relógio): mostra a temperatura e o estado; clique para abrir o painel.
@@ -27,7 +43,12 @@ sem passar pela nuvem: ícone ao lado do relógio, painel animado, menu rápido 
 
 ## Como usar
 
-### Opção 1 — com Python (Windows 10/11)
+### Opção 1 — `.exe` pronto (recomendado)
+
+Veja **Instalação em 1 minuto** acima, ou baixe em
+[Releases](https://github.com/lucas24134/daikin-smart-ac-pc/releases).
+
+### Opção 2 — com Python (Windows 10/11)
 
 1. Baixe o projeto (**Code → Download ZIP**) e descompacte.
 2. Dê duplo clique em **`INSTALAR.bat`** — ele instala o Python se precisar e abre o
@@ -38,9 +59,9 @@ sem passar pela nuvem: ícone ao lado do relógio, painel animado, menu rápido 
       escolha o ar → Enviar*; cole a chave e clique em *Testar e salvar*.
 3. Clique em **Concluir**: o ícone aparece ao lado do relógio.
 
-### Opção 2 — virar um app (`DaikinSmartAC.exe`)
+### Gerar o `.exe` você mesmo
 
-Depois da opção 1, dê duplo clique em **`CRIAR_EXE.bat`**. Ele gera o `DaikinSmartAC.exe`,
+Depois da opção 2, dê duplo clique em **`CRIAR_EXE.bat`**. Ele gera o `DaikinSmartAC.exe`,
 que funciona sozinho (sem Python) e pode ser enviado para outras pessoas.
 
 ### Linha de comando
