@@ -1,0 +1,12 @@
+# Dados pessoais — NUNCA publicar (Device Key e IP)
+config.json
+erro.log
+
+# Gerados automaticamente
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+*.exe
+daikin.ico
